@@ -1,0 +1,11 @@
+{
+    "name": "vagrant/betfair",
+    "require": {
+        "malenki/math": "^0.5.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "Betfair\\": "src/"
+        }
+    }
+}
