@@ -5,39 +5,63 @@ namespace Betfair;
 
 use RuntimeException;
 
-class MonthsSimulator {
-
-	public const GREEN = 1;
-	public const RED = 0;
+class MonthsSimulator
+{
 	public const STAKE_MIN = 10;
+
+	public const GREEN = 'green';
+	public const RED = 'red';
+	public const YELLOW = 'yellow';
+
+	public const HANDICAP_PLUS_1 = 1;
+	public const HANDICAP_PLUS_0_75 = 0.75;
+	public const HANDICAP_PLUS_0_5 = 0.5;
+	public const HANDICAP_PLUS_0_25 = 0.25;
+	public const HANDICAP_0 = 0;
+
+	public const HANDICAPS = [
+		self::HANDICAP_PLUS_1,
+		self::HANDICAP_PLUS_0_75,
+		self::HANDICAP_PLUS_0_5,
+		self::HANDICAP_PLUS_0_25,
+		self::HANDICAP_0,
+	];
+
+	private const HANDICAP_ENDING_0 = 0; // -1, 0, 1, ...
+	private const HANDICAP_ENDING_25 = 25; // -0.25, 0.25, 1.25, ...
+	private const HANDICAP_ENDING_5 = 5; // -0.5, 0.5, 1.5, ...
+	private const HANDICAP_ENDING_75 = 75; // -0.75, 0.75, 1.75, ...
 
 
 	private $walletStart = 1000;
 	private $walletEnd = 0;
 	private $stakes = 50;
-	private $avgOdds = 1.65;
+	private $odds = 2.00;
 	private $betsMonth = 20;
-	private $greensPercentage = 75;
+	private $greensPercentage = 50;
 	private $redsPercentage = 25;
+	private $yellowsPercentage = 25;
 	private $maxRedsSequence = 0;
 	private $months = 11;
 	private $commission = 0.065; // 6.5%
+	private $handicap = self::HANDICAP_0;
+	private $handicapEnding = self::HANDICAP_ENDING_0;
 
 
-	public function getWalletEnd(): int {
-
+	public function getWalletEnd(): int
+	{
 		return $this->walletEnd;
 	}
 
 
-	public function getMaxRedsSequence(): int {
-
+	public function getMaxRedsSequence(): int
+	{
 		return $this->maxRedsSequence;
 	}
 
 
-	public function setWalletStart(int $walletStart): MonthsSimulator {
-
+	public function setWalletStart(int $walletStart): MonthsSimulator
+	{
 		if ($walletStart < self::STAKE_MIN)
 		{
 			throw new RuntimeException("walletStart can't be less than " . self::STAKE_MIN);
@@ -51,8 +75,8 @@ class MonthsSimulator {
 	}
 
 
-	public function setStakes(int $stakes): MonthsSimulator {
-
+	public function setStakes(int $stakes): MonthsSimulator
+	{
 		if ($stakes < 1)
 		{
 			throw new RuntimeException("stakePercentage can't be less than 1");
@@ -66,27 +90,27 @@ class MonthsSimulator {
 	}
 
 
-	public function setAvgOdds(float $avgOdds): MonthsSimulator {
-
-		if ($avgOdds <= 1)
+	public function setOdds(float $odds): MonthsSimulator
+	{
+		if ($odds <= 1)
 		{
-			throw new RuntimeException("avgOdds can be greater than 1");
+			throw new RuntimeException("odds can be greater than 1");
 		}
-		if ($avgOdds > 1000)
+		if ($odds > 1000)
 		{
-			throw new RuntimeException("avgOdds can't be greater than 1000");
+			throw new RuntimeException("odds can't be greater than 1000");
 		}
 
 
-		$this->avgOdds = $avgOdds;
+		$this->odds = $odds;
 
 
 		return $this;
 	}
 
 
-	public function setBetsMonth(int $betsMonth): MonthsSimulator {
-
+	public function setBetsMonth(int $betsMonth): MonthsSimulator
+	{
 		if ($betsMonth < 1)
 		{
 			throw new RuntimeException("betsMonth can't be less than 1");
@@ -100,28 +124,8 @@ class MonthsSimulator {
 	}
 
 
-	public function setGreensPercentage(int $greensPercentage): MonthsSimulator {
-
-		if ($greensPercentage > 100)
-		{
-			throw new RuntimeException("greenPercentage can't be greater than 100");
-		}
-		if ($greensPercentage < 0)
-		{
-			throw new RuntimeException("greenPercentage can't be less than 0");
-		}
-
-
-		$this->greensPercentage = $greensPercentage;
-		$this->redsPercentage = 100 - $greensPercentage;
-
-
-		return $this;
-	}
-
-
-	public function setMonths(int $months): MonthsSimulator {
-
+	public function setMonths(int $months): MonthsSimulator
+	{
 		if ($months < 1)
 		{
 			throw new RuntimeException("months can't be less than 1");
@@ -135,8 +139,8 @@ class MonthsSimulator {
 	}
 
 
-	public function setCommission(float $commission): MonthsSimulator {
-
+	public function setCommission(float $commission): MonthsSimulator
+	{
 		if ($commission < 0)
 		{
 			throw new RuntimeException("commission can't be less than 0");
@@ -154,8 +158,48 @@ class MonthsSimulator {
 	}
 
 
-	public function simulate(): MonthsSimulator {
+	public function setHandicap(float $handicap, int $greensPercentage, int $yellowsPercentage = null): MonthsSimulator
+	{
+		$yellowsPercentage = $yellowsPercentage ?: 0;
+		$noReds = $greensPercentage + $yellowsPercentage;
+		$handicapEnding = (int)explode('.', (string)$handicap)[1];
 
+
+		if (!in_array($handicap, self::HANDICAPS))
+		{
+			throw new RuntimeException("handicap not allowed");
+		}
+		if ($greensPercentage > 100)
+		{
+			throw new RuntimeException("greenPercentage can't be greater than 100");
+		}
+		if ($greensPercentage < 0)
+		{
+			throw new RuntimeException("greenPercentage can't be less than 0");
+		}
+		if ($noReds >= 100)
+		{
+			throw new RuntimeException("greenPercentage + yellowsPercentage can't be greater or equals than 100");
+		}
+		if (($handicapEnding !== self::HANDICAP_ENDING_5) && ($yellowsPercentage <= 0))
+		{
+			throw new RuntimeException("yellowsPercentage can't be less or equals than 0");
+		}
+
+
+		$this->handicap = $handicap;
+		$this->handicapEnding = $handicapEnding;
+		$this->greensPercentage = $greensPercentage;
+		$this->yellowsPercentage = $yellowsPercentage;
+		$this->redsPercentage = 100 - $noReds;
+
+
+		return $this;
+	}
+
+
+	public function simulate(): MonthsSimulator
+	{
 		$redsSequence = 0;
 		$results = [];
 
@@ -183,12 +227,19 @@ class MonthsSimulator {
 				$result = array_shift($results);
 
 
-				if ($result === self::GREEN)
+				if (in_array($result, [self::GREEN, self::YELLOW]))
 				{
 					$redsSequence = 0;
 
 
-					$gain = $this->calcGain($stake);
+					if ($result === self::GREEN)
+					{
+						$gain = $this->calcGreenGain($stake);
+					}
+					else
+					{
+						$gain = $this->calcYellowGain($stake);
+					}
 
 
 					$this->walletEnd += $gain;
@@ -211,8 +262,8 @@ class MonthsSimulator {
 	}
 
 
-	private function calcStake(): int {
-
+	private function calcStake(): int
+	{
 		$stake = $this->walletEnd / $this->stakes;
 		$stake = (int)floor($stake);
 
@@ -255,9 +306,12 @@ class MonthsSimulator {
 	}
 
 
-	private function calcGain(int $stake): float {
+	private function calcGain(int $stake, float $profitPercentege): float
+	{
+		$profit = ($this->odds - 1) * $stake;
 
-		$profit = ($this->avgOdds - 1) * $stake;
+
+		$profit *= $profitPercentege;
 
 
 		$commission = $profit * $this->commission;
@@ -269,23 +323,73 @@ class MonthsSimulator {
 		$gain = $stake + $netProfit;
 
 
+		$gain = round($gain, 2);
+
+
 		return $gain;
 	}
 
 
-	private function getResults(): array {
+	private function calcGreenGain(int $stake): float
+	{
+		$gain = $this->calcGain($stake, 1);
 
+
+		return $gain;
+	}
+
+
+	private function calcYellowGain(int $stake): float
+	{
+		switch ($this->handicapEnding)
+		{
+			case self::HANDICAP_ENDING_75:
+
+				$gain = $stake / 2;
+
+				break;
+
+
+			case self::HANDICAP_ENDING_25:
+
+				$gain = $this->calcGain($stake, 0.5);
+
+				break;
+
+
+			default:
+
+				$gain = $stake;
+
+				break;
+		}
+
+
+		return $gain;
+	}
+
+
+	private function getResults(): array
+	{
 		$results = [];
 		$greens = [];
 		$reds = [];
+		$yellows = [];
 
 
 		$greens = array_pad($greens, $this->greensPercentage, self::GREEN);
 		$reds = array_pad($reds, $this->redsPercentage, self::RED);
+		$yellows = array_pad($yellows, $this->yellowsPercentage, self::YELLOW);
 
 
 		array_push($results, ...$greens);
 		array_push($results, ...$reds);
+
+
+		if ($yellows)
+		{
+			array_push($results, ...$yellows);
+		}
 
 
 		shuffle($results);
