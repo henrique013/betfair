@@ -103,8 +103,11 @@ class RoundsSimulator {
 
 		$this->maxRedsSequences = [];
 		$this->maxRedsSeqPercentages = [];
-		$this->walletsMax = PHP_INT_MIN;
-		$this->walletsMin = PHP_INT_MAX;
+		$this->wallets = [];
+		$this->walletsMax = 0;
+		$this->walletsMin = 0;
+		$this->walletsAvg = 0;
+		$this->walletsMedian = 0;
 
 
 		return $this;

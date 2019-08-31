@@ -141,7 +141,7 @@ class MonthsSimulator {
 
 
 		$this->walletEnd = $this->walletStart;
-		$this->maxRedsSequence = PHP_INT_MIN;
+		$this->maxRedsSequence = 0;
 
 
 		for ($month = 1; $month <= $this->months; $month++)
@@ -165,6 +165,9 @@ class MonthsSimulator {
 
 				if ($result === self::GREEN)
 				{
+					$redsSequence = 0;
+
+
 					$gain = $stake * $this->avgOdds;
 
 
@@ -173,22 +176,14 @@ class MonthsSimulator {
 				else
 				{
 					$redsSequence++;
-				}
 
 
-				if ($redsSequence > $this->maxRedsSequence)
-				{
-					$this->maxRedsSequence = $redsSequence;
-				}
-
-
-				if ($result === self::GREEN)
-				{
-					$redsSequence = 0;
+					if ($redsSequence > $this->maxRedsSequence)
+					{
+						$this->maxRedsSequence = $redsSequence;
+					}
 				}
 			}
-
-			//$this->walletEnd += 1000;
 		}
 
 
