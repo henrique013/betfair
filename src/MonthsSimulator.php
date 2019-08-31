@@ -46,6 +46,14 @@ class MonthsSimulator
 	private $commission = 0.065; // 6.5%
 	private $handicap = self::HANDICAP_0;
 	private $handicapEnding = self::HANDICAP_ENDING_0;
+	private $results = [];
+	private $resultIndex = 0;
+
+
+	public function __construct()
+	{
+		$this->buildResults();
+	}
 
 
 	public function getWalletEnd(): int
@@ -145,24 +153,28 @@ class MonthsSimulator
 		{
 			throw new RuntimeException("commission can't be less than 0");
 		}
-		if ($commission >= 1)
+		if ($commission >= 100)
 		{
-			throw new RuntimeException("commission can't be greater or equals than 1");
+			throw new RuntimeException("commission can't be greater or equals than 100");
 		}
 
 
-		$this->commission = $commission;
+		$this->commission = $commission / 100;
 
 
 		return $this;
 	}
 
 
-	public function setHandicap(float $handicap, int $greensPercentage, int $yellowsPercentage = null): MonthsSimulator
+	public function setHandicap(float $handicap, float $greensPercentage, float $yellowsPercentage = null): MonthsSimulator
 	{
-		$yellowsPercentage = $yellowsPercentage ?: 0;
+		$greensPercentage = (int)floor($greensPercentage);
+
+		$yellowsPercentage = (int)floor(($yellowsPercentage ?: 0));
+
 		$noReds = $greensPercentage + $yellowsPercentage;
-		$handicapEnding = (int)explode('.', (string)$handicap)[1];
+
+		$handicapEnding = $handicap ? (int)explode('.', (string)$handicap)[1] : 0;
 
 
 		if (!in_array($handicap, self::HANDICAPS))
@@ -194,6 +206,9 @@ class MonthsSimulator
 		$this->redsPercentage = 100 - $noReds;
 
 
+		$this->buildResults();
+
+
 		return $this;
 	}
 
@@ -201,7 +216,6 @@ class MonthsSimulator
 	public function simulate(): MonthsSimulator
 	{
 		$redsSequence = 0;
-		$results = [];
 
 
 		$this->walletEnd = $this->walletStart;
@@ -215,16 +229,10 @@ class MonthsSimulator
 
 			for ($bet = 1; $bet <= $this->betsMonth; $bet++)
 			{
-				if (!$results)
-				{
-					$results = $this->getResults();
-				}
-
-
 				$this->walletEnd -= $stake;
 
 
-				$result = array_shift($results);
+				$result = $this->getResult();
 
 
 				if (in_array($result, [self::GREEN, self::YELLOW]))
@@ -369,32 +377,46 @@ class MonthsSimulator
 	}
 
 
-	private function getResults(): array
+	private function getResult(): string
 	{
-		$results = [];
-		$greens = [];
-		$reds = [];
-		$yellows = [];
-
-
-		$greens = array_pad($greens, $this->greensPercentage, self::GREEN);
-		$reds = array_pad($reds, $this->redsPercentage, self::RED);
-		$yellows = array_pad($yellows, $this->yellowsPercentage, self::YELLOW);
-
-
-		array_push($results, ...$greens);
-		array_push($results, ...$reds);
-
-
-		if ($yellows)
+		if (empty($this->results[$this->resultIndex]))
 		{
-			array_push($results, ...$yellows);
+			$this->resultIndex = 0;
+
+
+			shuffle($this->results);
 		}
 
 
-		shuffle($results);
+		$result = $this->results[$this->resultIndex];
 
 
-		return $results;
+		$this->resultIndex++;
+
+
+		return $result;
+	}
+
+
+	private function buildResults(): MonthsSimulator
+	{
+		$this->results = [];
+		$this->resultIndex = 0;
+
+
+		array_push($this->results, ...array_pad([], $this->greensPercentage, self::GREEN));
+		array_push($this->results, ...array_pad([], $this->redsPercentage, self::RED));
+
+
+		if ($this->yellowsPercentage)
+		{
+			array_push($this->results, ...array_pad([], $this->yellowsPercentage, self::YELLOW));
+		}
+
+
+		shuffle($this->results);
+
+
+		return $this;
 	}
 }
