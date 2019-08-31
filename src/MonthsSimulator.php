@@ -13,24 +13,35 @@ class MonthsSimulator
 	public const RED = 'red';
 	public const YELLOW = 'yellow';
 
-	public const HANDICAP_PLUS_1 = 1;
-	public const HANDICAP_PLUS_0_75 = 0.75;
-	public const HANDICAP_PLUS_0_5 = 0.5;
-	public const HANDICAP_PLUS_0_25 = 0.25;
+	public const HANDICAP_1_OVER = 1;
+	public const HANDICAP_0_75_OVER = 0.75;
+	public const HANDICAP_0_5_OVER = 0.5;
+	public const HANDICAP_0_25_OVER = 0.25;
 	public const HANDICAP_0 = 0;
+	public const HANDICAP_0_25_UNDER = -0.25;
+	public const HANDICAP_0_5_UNDER = -0.5;
+	public const HANDICAP_0_75_UNDER = -0.75;
+	public const HANDICAP_1_UNDER = -1;
 
 	public const HANDICAPS = [
-		self::HANDICAP_PLUS_1,
-		self::HANDICAP_PLUS_0_75,
-		self::HANDICAP_PLUS_0_5,
-		self::HANDICAP_PLUS_0_25,
+		self::HANDICAP_1_OVER,
+		self::HANDICAP_0_75_OVER,
+		self::HANDICAP_0_5_OVER,
+		self::HANDICAP_0_25_OVER,
 		self::HANDICAP_0,
+		self::HANDICAP_0_25_UNDER,
+		self::HANDICAP_0_5_UNDER,
+		self::HANDICAP_0_75_UNDER,
+		self::HANDICAP_1_UNDER,
 	];
 
-	private const HANDICAP_ENDING_0 = 0; // -1, 0, 1, ...
-	private const HANDICAP_ENDING_25 = 25; // -0.25, 0.25, 1.25, ...
-	private const HANDICAP_ENDING_5 = 5; // -0.5, 0.5, 1.5, ...
-	private const HANDICAP_ENDING_75 = 75; // -0.75, 0.75, 1.75, ...
+	public const HANDICAP_ENDING_75_OVER = 75;   // 0.75, 1.75, ...
+	public const HANDICAP_ENDING_25_OVER = 25;   // 0.25, 1.25, ...
+	public const HANDICAP_ENDING_5_OVER = 5;     // 0.5, 1.5, ...
+	public const HANDICAP_ENDING_0 = 0;          // -1, 0, 1, ...
+	public const HANDICAP_ENDING_5_UNDER = -5;   // -1.5, -0.5, ...
+	public const HANDICAP_ENDING_25_UNDER = -25; // -1.25 -0.25, ...
+	public const HANDICAP_ENDING_75_UNDER = -75; // -1.75 -0.75, ...
 
 
 	private $walletStart = 1000;
@@ -44,7 +55,6 @@ class MonthsSimulator
 	private $maxRedsSequence = 0;
 	private $months = 11;
 	private $commission = 0.065; // 6.5%
-	private $handicap = self::HANDICAP_0;
 	private $handicapEnding = self::HANDICAP_ENDING_0;
 	private $results = [];
 	private $resultIndex = 0;
@@ -174,7 +184,8 @@ class MonthsSimulator
 
 		$noReds = $greensPercentage + $yellowsPercentage;
 
-		$handicapEnding = $handicap ? (int)explode('.', (string)$handicap)[1] : 0;
+		$handicapEnding = explode('.', (string)abs($handicap));
+		$handicapEnding = intval(count($handicapEnding) === 2 ? $handicapEnding[1] : $handicapEnding[0]);
 
 
 		if (!in_array($handicap, self::HANDICAPS))
@@ -193,13 +204,18 @@ class MonthsSimulator
 		{
 			throw new RuntimeException("greenPercentage + yellowsPercentage can't be greater or equals than 100");
 		}
-		if (($handicapEnding !== self::HANDICAP_ENDING_5) && ($yellowsPercentage <= 0))
+		if (($handicapEnding !== 5) && ($yellowsPercentage <= 0))
 		{
 			throw new RuntimeException("yellowsPercentage can't be less or equals than 0");
 		}
 
 
-		$this->handicap = $handicap;
+		if ($handicap < 0)
+		{
+			$handicapEnding *= -1;
+		}
+
+
 		$this->handicapEnding = $handicapEnding;
 		$this->greensPercentage = $greensPercentage;
 		$this->yellowsPercentage = $yellowsPercentage;
@@ -351,14 +367,16 @@ class MonthsSimulator
 	{
 		switch ($this->handicapEnding)
 		{
-			case self::HANDICAP_ENDING_75:
+			case self::HANDICAP_ENDING_75_OVER:
+			case self::HANDICAP_ENDING_25_UNDER:
 
 				$gain = $stake / 2;
 
 				break;
 
 
-			case self::HANDICAP_ENDING_25:
+			case self::HANDICAP_ENDING_25_OVER:
+			case self::HANDICAP_ENDING_75_UNDER:
 
 				$gain = $this->calcGain($stake, 0.5);
 

@@ -9,13 +9,13 @@ require_once '../vendor/autoload.php';
 
 $monthsSimulator = (new MonthsSimulator)
 	->setWalletStart(1000)
-	->setBetsMonth(20)
+	->setBetsMonth(24)
 	->setMonths(11)
-	->setCommission(6.5)
+	->setCommission(0)
 	// ----
 	->setStakes(50)
-	->setOdds(1.22)
-	->setHandicap(0, 73.33, 16.79);
+	->setOdds(1.54)
+	->setHandicap(-1, 46, 26);
 
 (new RoundsSimulator($monthsSimulator))
 	->setRounds(1000)
