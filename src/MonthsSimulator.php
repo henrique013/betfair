@@ -13,6 +13,10 @@ class MonthsSimulator
 	public const RED = 'red';
 	public const YELLOW = 'yellow';
 
+	public const HANDICAP_2_OVER = 2;
+	public const HANDICAP_1_75_OVER = 1.75;
+	public const HANDICAP_1_5_OVER = 1.5;
+	public const HANDICAP_1_25_OVER = 1.25;
 	public const HANDICAP_1_OVER = 1;
 	public const HANDICAP_0_75_OVER = 0.75;
 	public const HANDICAP_0_5_OVER = 0.5;
@@ -22,8 +26,16 @@ class MonthsSimulator
 	public const HANDICAP_0_5_UNDER = -0.5;
 	public const HANDICAP_0_75_UNDER = -0.75;
 	public const HANDICAP_1_UNDER = -1;
+	public const HANDICAP_1_25_UNDER = -1.25;
+	public const HANDICAP_1_5_UNDER = -1.5;
+	public const HANDICAP_1_75_UNDER = -1.75;
+	public const HANDICAP_2_UNDER = -2;
 
 	public const HANDICAPS = [
+		self::HANDICAP_2_OVER,
+		self::HANDICAP_1_75_OVER,
+		self::HANDICAP_1_5_OVER,
+		self::HANDICAP_1_25_OVER,
 		self::HANDICAP_1_OVER,
 		self::HANDICAP_0_75_OVER,
 		self::HANDICAP_0_5_OVER,
@@ -33,6 +45,10 @@ class MonthsSimulator
 		self::HANDICAP_0_5_UNDER,
 		self::HANDICAP_0_75_UNDER,
 		self::HANDICAP_1_UNDER,
+		self::HANDICAP_1_25_UNDER,
+		self::HANDICAP_1_5_UNDER,
+		self::HANDICAP_1_75_UNDER,
+		self::HANDICAP_2_UNDER,
 	];
 
 	public const HANDICAP_ENDING_75_OVER = 75;   // 0.75, 1.75, ...
