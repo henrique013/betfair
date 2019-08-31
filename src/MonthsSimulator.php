@@ -21,6 +21,7 @@ class MonthsSimulator {
 	private $redsPercentage = 25;
 	private $maxRedsSequence = 0;
 	private $months = 11;
+	private $commission = 0.065; // 6.5%
 
 
 	public function getWalletEnd(): int {
@@ -134,6 +135,25 @@ class MonthsSimulator {
 	}
 
 
+	public function setCommission(float $commission): MonthsSimulator {
+
+		if ($commission < 0)
+		{
+			throw new RuntimeException("commission can't be less than 0");
+		}
+		if ($commission >= 1)
+		{
+			throw new RuntimeException("commission can't be greater or equals than 1");
+		}
+
+
+		$this->commission = $commission;
+
+
+		return $this;
+	}
+
+
 	public function simulate(): MonthsSimulator {
 
 		$redsSequence = 0;
@@ -168,7 +188,7 @@ class MonthsSimulator {
 					$redsSequence = 0;
 
 
-					$gain = $stake * $this->avgOdds;
+					$gain = $this->calcGain($stake);
 
 
 					$this->walletEnd += $gain;
@@ -232,6 +252,24 @@ class MonthsSimulator {
 
 
 		return $stake;
+	}
+
+
+	private function calcGain(int $stake): float {
+
+		$profit = ($this->avgOdds - 1) * $stake;
+
+
+		$commission = $profit * $this->commission;
+
+
+		$netProfit = $profit - $commission;
+
+
+		$gain = $stake + $netProfit;
+
+
+		return $gain;
 	}
 
 
